@@ -1,0 +1,27 @@
+# Imaging data and results — never commit
+*.dcm
+*.nii
+*.nii.gz
+*.npz
+*.fdf
+*.png
+*.jpg
+*.pptx
+*.hwp
+
+# Per-run outputs
+2. 분석 결과/
+*_out/
+brain_mask_check/
+scale_test/
+rescaled/
+individual_rescaled/
+
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+
+# OS
+.DS_Store
+Thumbs.db
