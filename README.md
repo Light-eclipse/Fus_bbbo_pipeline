@@ -18,6 +18,7 @@ out to be, and the number that settled it. Those notes are the point of the repo
 | Tag | First used | What it added |
 |---|---|---|
 | [`v0.1`](../../releases/tag/v0.1) | 2026-06-25 | DCE core pipeline |
+| [`v0.2`](../../releases/tag/v0.2) | 2026-08-20 | Agilent scale correction, T2/T2*, EPT |
 
 
 Full detail for each stage is in [CHANGELOG.md](CHANGELOG.md).
