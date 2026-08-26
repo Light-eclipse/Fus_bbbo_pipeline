@@ -8,6 +8,24 @@ the stage level. Files that were edited in place rather than copied per date —
 `mri_dce.py` above all — exist only in their final state and enter at v0.1 as they are
 now.
 
+## v0.3 — Mirror asymmetry detection
+
+*2026-08-26*
+
+Scale correction folded into the DCE driver.
+**Whole-tissue enhancement is not a BBBO measure.** Scalp and temporal muscle are
+most of the tissue voxels and muscle enhances 25-90% with Gd. Judging opening from
+that curve is meaningless.
+Mirror asymmetry instead: FUS-BBBO is usually unilateral while scalp and muscle are
+left-right symmetric, so subtracting the mirrored enhancement map leaves the
+unilateral component. The contralateral mirror ROI acts as an internal control, so
+the same definition as `bbbo_metrics` applies without manual ROIs.
+Also handles two data quirks: a TR-200 series on a different protocol (excluded from
+the DCE curve), and one animal's coronal series acquired with another animal's
+prescription (resampled back onto its own grid; correlation 0.852 -> 0.981).
+
+Files: `run_dce.py`
+
 ## v0.2 — Agilent scale correction, T2/T2*, EPT
 
 *2026-08-20*
