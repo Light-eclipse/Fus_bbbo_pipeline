@@ -8,6 +8,27 @@ the stage level. Files that were edited in place rather than copied per date —
 `mri_dce.py` above all — exist only in their final state and enter at v0.1 as they are
 now.
 
+## v0.4 — Tilted symmetry axis, cross-orientation check
+
+*2026-09-11*
+
+**Translation-only mirroring fails on a tilted head.** Fitted tilts ran -7.5 to
++11.5 degrees; the residual misalignment leaked into the left-right difference as
+broad red/blue bands across the whole brain.
+The axis search now fits tilt and position together. An arbitrary line reflection is
+applied as a single affine, R = 2ddT - I, rather than rotate-flip-rotate (faster and
+less interpolation blur). Search runs on a 2x downsample, is restricted to the mask
+column centroid +-20 px, and rejects any candidate with under 75% mask overlap —
+without the constraint the axis wanders off. Results are cached per
+(animal, series, orientation) because the asymmetry is evaluated three times per slab.
+Candidates are then checked at the same physical coordinate in the orthogonal
+acquisition.
+**Every one of the 33 candidates this found was a registration residual** — an arc
+along the skull or brain surface, red on one side and blue on the other. Automatic
+metrics pass them. The figures have to be looked at.
+
+Files: `run_dce.py`, `compare_fse.py`
+
 ## v0.3 — Mirror asymmetry detection
 
 *2026-08-26*
