@@ -1,35 +1,34 @@
 # -*- coding: utf-8 -*-
-"""260911 BBBO 80G — 시리즈별 강도 스케일 보정 분석 (개체 2, 3, 4).
+"""260915 BBBO 120G — 시리즈별 강도 스케일 보정 분석 (폴더 1, 3, 4).
 
-이전 날짜들과 같은 절차다. Agilent FdfToDcm이 시리즈(=시점)마다 화소값을 따로
-정규화해 저장했고 그 인자가 사설 태그 (00E1,1001)에 있다. `참값 = 화소값 / 태그`로
-되돌려야 PRE와 POST를 같은 축에서 비교할 수 있다. 검증은 Gd·수신이득과 무관해야 하는
-공기 배경 잡음으로 하고, 배경 마스크는 **보정 후** 데이터의 하위 10%로 잡는다.
+절차는 26-09-11판(`_run_0911.py`)과 같다. Agilent FdfToDcm이 시리즈마다 화소값을 따로
+정규화했고 인자가 사설 태그 (00E1,1001)에 있다. `참값 = 화소값 / 태그`로 되돌린 뒤
+GRE(gems)와 FSE(fsems)를 각각 독립 시계열로 처리한다.
 
 이 날짜의 특징
 --------------
-1. **FSE T1에 PRE와 POST가 둘 다 있다.** 26-08-26에는 Gd 후 한 장뿐이라 정량이
-   불가능했는데 여기서는 같은 프로토콜의 쌍이 있어 FSE 자체로 증강을 계산할 수 있다.
-   게다가 TE가 7.44ms로 26-08-26의 27.7ms보다 훨씬 짧다. 조직 T2 약 48ms 기준
-   exp(-7.44/48)=0.86이라 T2 가중 오염이 적은 제대로 된 T1 강조다.
-   → GRE(gems)와 FSE(fsems)를 **각각 독립된 시계열**로 처리한다. 시퀀스가 다르므로
-     둘의 % 증강을 서로 비교하지는 않는다.
-2. 세 개체의 촬영 파라미터가 완전히 같다(GRE AX TR111/FA45, GRE COR TR79/FA45,
-   FSE TR750/TE7.44/FA90/ETL4). 같은 방향끼리는 **개체 간 비교가 가능**하다.
-   방향이 다르면(AX TR111 vs COR TR79) 비교하지 않는다.
-3. 개체 3만 PRE와 POST 사이에 동물이 움직였다. IPP가 달라진다(AX 면외 -1.07 slice,
-   COR 면내 -11.9/-2.9 화소). 물리좌표 리샘플로 PRE 격자에 맞춘다. 나머지 두 개체는
-   PRE와 POST의 IPP가 소수점까지 같다.
-4. 개체 3 폴더의 `0911_FSE_AX_PRE_NO2_20260911_02`는 **파일명 오타**다. 촬영 시각이
-   16:06:12로 개체 3 세션 한가운데이고(개체 2는 14:51:31), IPP·IOP가 개체 3의
-   GRE AX PRE와 소수점까지 일치한다. 개체 2 파일의 복사본도 아니다(화소 불일치,
-   개체 2 FSE AX PRE와의 상관 0.657). 개체 3의 영상으로 그대로 쓴다.
+1. **파일명이 세 폴더 모두 `NO1`이다.** 개체 구분은 **폴더 번호(1, 3, 4)로만** 된다.
+   세 폴더가 서로 다른 개체인 것은 확인했다. IPP·IOP가 전부 다르고(AX 기준
+   [16.132,-16.13,8.095] / [15.584,-15.967,4.85] / [14.64,-16.47,8.28]), 촬영 시간대가
+   겹치지 않으며(10:35~11:01 / 11:28~11:40 / 13:55~14:08), 화소가 동일한 쌍도 없다.
+   폴더 간 GRE AX PRE 상관은 0.81~0.88로 "다른 랫 뇌끼리" 수준이다.
+   폴더 4 안에는 파일명 접미사가 `_01`, `_03`, `_04`로 섞여 있으나 IPP·IOP가 전부
+   폴더 4 자신의 기하와 일치하므로 모두 폴더 4의 영상이다.
+2. **표적이 여러 개인 설계다.** 한 뇌에 최대 4부위를 조사했으므로 좌우 거울상 비대칭만
+   쓰면 안 된다. 양쪽 반구를 동시에 표적했다면 거울상 차감에서 서로 상쇄된다.
+   그래서 좌우 대칭을 가정하지 않는 **국소 대비 검출기**(`local_focus`)를 함께 돌린다.
+3. PRE와 POST의 IPP가 폴더별로 소수점까지 같다. 처방 수준의 이동은 없다.
+4. 폴더 4의 AX만 TR 110 / TE 3.948(다른 폴더는 111 / 3.984), FSE AX TE 7.256(다른
+   폴더는 7.440)이다. 폴더 안에서는 PRE와 POST가 같은 값이라 증강 계산에는 영향이 없고,
+   개체 간 차이도 1% 안쪽이라 무시할 수준이다.
+5. 폴더 1의 **FSE COR POST만 11:01:01로 다른 POST보다 14분 늦게** 찍혔다
+   (FSE AX POST는 10:46:27). 같은 개체의 FSE AX와 COR을 같은 시점으로 보지 말 것.
 
 실행
 ----
-    python "_run_0911.py"          # 개체 2, 3, 4 전부
-    python "_run_0911.py" 4        # 개체 4만
-    python "_run_0911.py" figs     # 저장된 npz로 그림/정량만 다시
+    python "_run_0915.py"          # 폴더 1, 3, 4 전부
+    python "_run_0915.py" 4        # 폴더 4만
+    python "_run_0915.py" figs     # 저장된 npz로 그림·정량만 다시
 """
 import os
 import re
@@ -46,8 +45,8 @@ import matplotlib.pyplot as plt
 
 ROOT = r"C:\Users\user\Desktop\대학원\6. 원자력의학원"
 CODE_DIR = os.path.join(ROOT, "MRI 분석 코드")
-BASE = os.path.join(ROOT, "26-09-11")
-DATA_ROOT = os.path.join(BASE, "260911_BBBO_80G")
+BASE = os.path.join(ROOT, "26-09-15")
+DATA_ROOT = os.path.join(BASE, "260915_BBBO_120G")
 OUT_ROOT = os.path.join(BASE, "2. 분석 결과")
 
 SCALE_TAG = (0x00E1, 0x1001)
@@ -63,9 +62,10 @@ MIRROR_MAX_DEG = 10    # 탐색할 최대 기울기 (도)
 KINDS = ("gre", "fse")
 KIND_LABEL = {"gre": "GRE DCE (gems)", "fse": "FSE T1 (fsems)"}
 
+# 파일명이 전부 NO1이라 폴더 번호가 유일한 개체 식별자다.
 SETS = {r: dict(data=os.path.join(DATA_ROOT, r),
                 out=os.path.join(OUT_ROOT, f"RAT {r}"),
-                label=f"0911_NO{r}") for r in ("2", "3", "4")}
+                label=f"0915_NO{r}") for r in ("1", "3", "4")}
 
 sys.path.insert(0, CODE_DIR)
 from mri_dce import (_load_volumes, Slab, register_slab, enhancement_curve,
@@ -802,6 +802,180 @@ def lateral_focus(rat, cfg):
     return rows
 
 
+# ------------------------------------------------------------ 국소 대비 병소 검출
+LOCAL_BG_SIGMA = 20     # 국소 배경 추정 가우시안 시그마 (화소). 약 2.3mm.
+LOCAL_EXCESS_PP = 15    # 국소 배경 대비 초과 문턱 (%p)
+LOCAL_MIN_VOX = 40      # 최소 화소수
+SHELL_IN, SHELL_OUT = 4, 12   # 대조 고리 반경 (화소). 병소에서 0.5~1.4mm 떨어진 띠.
+
+
+def _disk(rr):
+    y, x = np.mgrid[-rr:rr + 1, -rr:rr + 1]
+    return (y ** 2 + x ** 2 <= rr * rr)[None, :, :]
+
+
+def local_focus(rat, cfg):
+    """좌우 대칭을 가정하지 않고 국소 증강 덩어리를 찾는다.
+
+    왜 필요한가. 거울상 비대칭법은 한쪽만 열린다는 전제를 쓴다. 이 날짜는 한 뇌에
+    여러 부위를 표적했으므로 양쪽을 같이 열었다면 거울상 차감에서 서로 상쇄돼 둘 다
+    놓친다. 여기서는 대조군을 대측 반구가 아니라 **병소 주변 고리**로 잡는다.
+
+    절차: 증강% 맵에서 마스크 가중 가우시안(시그마 20화소)으로 매끄러운 국소 배경을
+    만들어 빼고 초과분을 얻는다. 조직 마스크를 21화소 침식해 두피·근육을 걷어낸 뒤
+    초과분이 15%p를 넘는 덩어리를 찾는다. 각 덩어리마다 4~12화소 떨어진 고리를 같은
+    슬라이스 안에서 대조 ROI로 잡아 순 누출을 계산한다.
+
+    한계는 거울상법과 같은 것이 남는다. 해부학적 뇌 분할이 아니라 침식이고, 정합
+    잔차가 조직 경계에 만드는 테두리가 국소 초과로 잡힐 수 있다. 그래서 edge_slice,
+    shell_enh_last_pct(고리가 25%를 넘으면 근육)를 같이 낸다.
+    """
+    OUT_DIR, ANIMAL = cfg["out"], cfg["label"]
+    f = os.path.join(OUT_DIR, "corrected_volumes.npz")
+    if not os.path.exists(f):
+        return []
+    d = np.load(f)
+    d_out = os.path.join(OUT_DIR, "local_focus")
+    os.makedirs(d_out, exist_ok=True)
+    rows = []
+    for kind in KINDS:
+        for ori in ("axial", "coronal"):
+            if key_of(kind, ori, "PRE") not in d.files:
+                continue
+            tps = ["PRE"] + sorted(
+                [x.split("_")[-1] for x in d.files
+                 if x.startswith(key_of(kind, ori, "POST"))],
+                key=lambda x: int(re.search(r"POST(\d*)", x).group(1) or 1))
+            vols = [d[key_of(kind, ori, t)].astype(float) for t in tps]
+            pre, last = vols[0], vols[-1]
+            m = d[key_of(kind, ori, "analysis_mask")]
+            sp = d[key_of(kind, ori, "spacing")]
+            enh = np.where(m, (last - pre) / (pre + 1e-6) * 100.0, 0.0)
+            num = ndimage.gaussian_filter(enh, (0, LOCAL_BG_SIGMA, LOCAL_BG_SIGMA))
+            den = ndimage.gaussian_filter(m.astype(float), (0, LOCAL_BG_SIGMA, LOCAL_BG_SIGMA))
+            bg = num / np.maximum(den, 1e-6)
+            exc = ndimage.gaussian_filter(np.where(m, enh - bg, 0.0), (0, 1.5, 1.5))
+            inner = ndimage.binary_erosion(m, np.ones((1, FOCUS_ERODE, FOCUS_ERODE)))
+            cand = ndimage.binary_opening(inner & (exc > LOCAL_EXCESS_PP),
+                                          np.ones((1, 3, 3)))
+            lab, n = ndimage.label(cand)
+            if n:
+                sizes = ndimage.sum(cand, lab, range(1, n + 1))
+            else:
+                sizes = np.array([])
+                print(f"  {ANIMAL}_{kind}_{ori}: 국소 초과 {LOCAL_EXCESS_PP}%p 넘는 덩어리 없음",
+                      flush=True)
+            vox = abs(sp[0] * sp[1] * sp[2])
+            din, dout = _disk(SHELL_IN), _disk(SHELL_OUT)
+            for rank, k in enumerate(np.argsort(sizes)[::-1][:4], 1):
+                if sizes[k] < LOCAL_MIN_VOX:
+                    break
+                sel = lab == (k + 1)
+                shell = (ndimage.binary_dilation(sel, dout)
+                         & ~ndimage.binary_dilation(sel, din) & inner)
+                if shell.sum() < 50:
+                    continue
+                zc, rc, cc = np.argwhere(sel).mean(0)
+                sig = [float(v[sel].mean()) for v in vols]
+                sgs = [float(v[shell].mean()) for v in vols]
+                e = [(x - sig[0]) / sig[0] * 100.0 for x in sig]
+                es = [(x - sgs[0]) / sgs[0] * 100.0 for x in sgs]
+                net = e[-1] - es[-1]
+                zs = sorted({int(z_) for z_ in np.argwhere(sel)[:, 0]})
+                edge = "예" if (min(zs) == 0 or max(zs) == pre.shape[0] - 1) else "아니오"
+                dsf, dss = sig[-1] - sig[0], sgs[-1] - sgs[0]
+                rows.append([kind, ori, rank, int(sizes[k]), round(sizes[k] * vox, 2),
+                             round(zc, 1), int(round(rc)), int(round(cc)),
+                             " ".join(str(z_) for z_ in zs), edge,
+                             round(float(exc[sel].mean()), 1),
+                             round(float(exc[sel].max()), 1),
+                             " ".join(f"{x:+.1f}" for x in e),
+                             " ".join(f"{x:+.1f}" for x in es),
+                             round(net, 1), "양성" if net >= 15 else "음성",
+                             round(es[-1], 1), round(sig[0], 1), round(sgs[0], 1),
+                             round(sig[0] / sgs[0], 3),
+                             round(dsf, 1), round(dss, 1), round(dsf - dss, 1)])
+                print(f"  {ANIMAL}_{kind}_{ori} L#{rank}: {int(sizes[k])}화소 "
+                      f"{sizes[k]*vox:.2f}mm3 중심(z {zc:.1f}, row {rc:.0f}, col {cc:.0f}) "
+                      f"슬라이스 {zs}  순 누출 {net:+.1f}%p  고리 {es[-1]:+.1f}%  "
+                      f"가장자리={edge}  PRE비 {sig[0]/sgs[0]:.2f}", flush=True)
+
+                wl = np.percentile(pre[pre > 0], [2, 99.5])
+                for z_ in zs:
+                    fig, ax = plt.subplots(1, 3, figsize=(13.5, 4.5))
+                    for a, (nm, vv) in zip(ax, [("PRE", pre), (tps[-1], last)]):
+                        a.imshow(vv[z_], cmap="gray", vmin=wl[0], vmax=wl[1])
+                        a.contour(sel[z_], levels=[0.5], colors="r", linewidths=0.9)
+                        a.contour(shell[z_], levels=[0.5], colors="c", linewidths=0.7)
+                        a.set_title(nm, fontsize=10)
+                        a.axis("off")
+                    im = ax[2].imshow(exc[z_], cmap="inferno", vmin=0, vmax=40)
+                    ax[2].contour(sel[z_], levels=[0.5], colors="c", linewidths=0.9)
+                    ax[2].set_title("국소 배경 대비 초과 %p", fontsize=10)
+                    ax[2].axis("off")
+                    fig.colorbar(im, ax=ax[2], fraction=0.046, pad=0.03, label="%p")
+                    fig.suptitle(f"{ANIMAL}_{kind}_{ori} 국소병소#{rank} slice {z_} — "
+                                 f"빨강=병소, 하늘=주변 고리 대조, 순 누출 {net:+.1f}%p",
+                                 fontsize=11)
+                    fig.tight_layout()
+                    fig.savefig(os.path.join(
+                        d_out, f"{ANIMAL}_{kind}_{ori}_local{rank}_slice{z_:02d}.png"),
+                        dpi=125, bbox_inches="tight")
+                    plt.close(fig)
+
+                fig, a = plt.subplots(figsize=(5.6, 4.2))
+                x = np.arange(len(tps))
+                a.plot(x, e, "o-", color="crimson", label="병소")
+                a.plot(x, es, "s-", color="steelblue", label="주변 고리")
+                a.axhline(0, color="k", lw=0.6, ls=":")
+                a.set_xticks(x)
+                a.set_xticklabels(tps, fontsize=8)
+                a.set_ylabel("증강 % (PRE 기준)")
+                a.set_title(f"{ANIMAL}_{kind}_{ori} 국소병소#{rank}  순 누출 {net:+.1f}%p",
+                            fontsize=11)
+                a.legend()
+                a.grid(alpha=0.3)
+                fig.tight_layout()
+                fig.savefig(os.path.join(
+                    d_out, f"{ANIMAL}_{kind}_{ori}_local{rank}_curve.png"), dpi=130)
+                plt.close(fig)
+
+            M = float(np.percentile(exc[inner], 99.5)) if inner.sum() else 40.0
+            nz = pre.shape[0]
+            cols = min(7, nz)
+            rr = int(np.ceil(nz / cols))
+            fig, axes = plt.subplots(rr, cols, figsize=(2.6 * cols, 2.8 * rr), squeeze=False)
+            axes = axes.ravel()
+            im = None
+            for z_ in range(nz):
+                im = axes[z_].imshow(np.where(inner[z_], exc[z_], np.nan),
+                                     cmap="inferno", vmin=0, vmax=max(M, 20))
+                axes[z_].set_title(f"slice {z_}", fontsize=8)
+            for a in axes:
+                a.axis("off")
+            fig.suptitle(f"{ANIMAL}_{kind}_{ori}  국소 배경 대비 초과 증강 "
+                         f"(배경 시그마 {LOCAL_BG_SIGMA}화소, 침식 후 영역만)", fontsize=12)
+            fig.subplots_adjust(right=0.9)
+            fig.colorbar(im, cax=fig.add_axes([0.92, 0.15, 0.010, 0.7]), label="%p")
+            fig.savefig(os.path.join(d_out, f"{ANIMAL}_{kind}_{ori}_excess_montage.png"),
+                        dpi=130, bbox_inches="tight")
+            plt.close(fig)
+    if rows:
+        with open(os.path.join(d_out, "local_focus.csv"), "w",
+                  newline="", encoding="utf-8-sig") as f:
+            w = csv.writer(f)
+            # shell_enh_last_pct 가 25%를 넘으면 ROI가 뇌가 아니라 두피/근육이다.
+            w.writerow(["kind", "orientation", "rank", "voxels", "volume_mm3",
+                        "center_z", "center_row", "center_col", "slices", "edge_slice",
+                        "excess_mean_pp", "excess_max_pp",
+                        "focus_enh_pct_by_frame", "shell_enh_pct_by_frame",
+                        "net_leakage_pp_lastPOST", "verdict_15pp", "shell_enh_last_pct",
+                        "PRE_focus", "PRE_shell", "PRE_focus_over_shell",
+                        "dS_focus", "dS_shell", "dS_diff"])
+            w.writerows(rows)
+    return rows
+
+
 # ------------------------------------------------------------ 직교 방향 교차 확인
 def _ori_geom(rat_dir):
     """(계열, 방향) → (첫 슬라이스 IPP, r, c, n, 화소크기, 슬라이스 간격). PRE 기준."""
@@ -904,6 +1078,7 @@ for k in keys:
     brain_zoom(k, SETS[k])
     mirror_asym(k, SETS[k])
     cross_orientation_check(k, SETS[k], lateral_focus(k, SETS[k]))
+    local_focus(k, SETS[k])
 
 if allsum:
     with open(os.path.join(OUT_ROOT, "enhancement_summary_all.csv"), "w",

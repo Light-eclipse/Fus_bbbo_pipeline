@@ -8,6 +8,26 @@ the stage level. Files that were edited in place rather than copied per date —
 `mri_dce.py` above all — exist only in their final state and enter at v0.1 as they are
 now.
 
+## v0.5 — Symmetry-free local contrast, lesion depth
+
+*2026-09-15*
+
+Four targets per animal breaks the mirror method: with both hemispheres sonicated
+there is no contralateral control.
+`local_focus` needs no symmetry. Mask-weighted Gaussian background (sigma 20 px,
+about 2.3 mm), excess over 15 %p, control taken from a surrounding shell 4-12 px
+(0.5-1.4 mm) away.
+Depth below the brain surface: brain mask = tissue mask minus dark skull line,
+largest 3D component, per-slice hole filling, then a distance transform at the lesion
+centroid. `DARK_FRAC` had to go from 0.55 to 0.85 — at 0.55 the skull line is too thin
+and the mask swallows scalp and muscle (2694 mm3 against a correct 1919-2392 mm3).
+`lesion_summary.py` clusters candidates in patient coordinates and counts how many of
+the four independent acquisitions (GRE/FSE x axial/coronal) reproduce each one.
+Elongation and midline distance are **flags, not rejects** — using them as hard
+filters removed a visually confirmed real lesion.
+
+Files: `run_dce.py`, `focus_depth.py`, `lesion_summary.py`, `top4.py`
+
 ## v0.4 — Tilted symmetry axis, cross-orientation check
 
 *2026-09-11*

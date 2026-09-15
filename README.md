@@ -21,6 +21,7 @@ out to be, and the number that settled it. Those notes are the point of the repo
 | [`v0.2`](../../releases/tag/v0.2) | 2026-08-20 | Agilent scale correction, T2/T2*, EPT |
 | [`v0.3`](../../releases/tag/v0.3) | 2026-08-26 | Mirror asymmetry detection |
 | [`v0.4`](../../releases/tag/v0.4) | 2026-09-11 | Tilted symmetry axis, cross-orientation check |
+| [`v0.5`](../../releases/tag/v0.5) | 2026-09-15 | Symmetry-free local contrast, lesion depth |
 
 
 Full detail for each stage is in [CHANGELOG.md](CHANGELOG.md).
