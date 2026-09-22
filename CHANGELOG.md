@@ -8,6 +8,31 @@ the stage level. Files that were edited in place rather than copied per date —
 `mri_dce.py` above all — exist only in their final state and enter at v0.1 as they are
 now.
 
+## v0.7 — Signal-decrease and haemorrhage review
+
+*2026-09-22*
+
+Every detector up to here thresholded on positive enhancement only, so a lesion that
+*darkens* was invisible to all of them.
+**Through-plane motion is the main cause of apparent signal loss.** `register_slab`
+with `mode="inplane"` corrects in-plane only. Estimating the slice-direction shift by
+gradient-magnitude correlation over dz in [-1.5, +1.5] slices and correcting it removes
+the decrease entirely in one animal (30.5% -> 1.3% of brain voxels) and reduces it to a
+smooth front-to-back gradient in another.
+`hypo_scan.py` (local-contrast deficit) is kept but **should not be used on post-Gd
+data**: once the surface dura enhances, everything just inside it reads as a deficit,
+producing a false rim about 1 mm below the surface on every date.
+Focal dark spots are separated by their contrast across sequences. Haemorrhage is dark
+on a late T2 echo and blooms on EPI; a vein is dark on GRE, isointense on spin echo and
+enhances; CSF and sinus are dark on T1w, bright on T2 and fill in with Gd. All spots
+checked matched CSF, sinus or vein — none matched haemorrhage.
+Haemorrhage and BBBO are judged separately. Opening is judged by contrast
+extravasation; `haemorrhage seen, therefore opening confirmed` merges two outcomes.
+This GRE has TE 3.98 ms and is only weakly susceptibility-sensitive, so small
+microbleeds can be missed.
+
+Files: `negchange/negchange_scan.py`, `negchange/negchange_diag.py`, `negchange/negchange_shiftfix.py`, `negchange/negchange_localize.py`, `negchange/spot_multimodal.py`, `negchange/hypo_scan.py`
+
 ## v0.6 — IVIM and T2 as independent contrasts
 
 *2026-09-22*
