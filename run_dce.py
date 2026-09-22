@@ -1,34 +1,27 @@
 # -*- coding: utf-8 -*-
-"""260915 BBBO 120G — 시리즈별 강도 스케일 보정 분석 (폴더 1, 3, 4).
+"""260922 BBBO 200G — 시리즈별 강도 스케일 보정 분석 (폴더 1, 4). GRE·FSE 부분.
 
-절차는 26-09-11판(`_run_0911.py`)과 같다. Agilent FdfToDcm이 시리즈마다 화소값을 따로
-정규화했고 인자가 사설 태그 (00E1,1001)에 있다. `참값 = 화소값 / 태그`로 되돌린 뒤
-GRE(gems)와 FSE(fsems)를 각각 독립 시계열로 처리한다.
+절차는 26-09-15판(`_run_0915.py`)과 같다. `참값 = 화소값 / 태그(00E1,1001)`로 되돌린 뒤
+GRE(gems)와 FSE(fsems)를 각각 독립 시계열로 처리한다. 좌우 대칭을 가정하지 않는
+국소 대비 검출(`local_focus`)도 그대로 돈다.
 
 이 날짜의 특징
 --------------
-1. **파일명이 세 폴더 모두 `NO1`이다.** 개체 구분은 **폴더 번호(1, 3, 4)로만** 된다.
-   세 폴더가 서로 다른 개체인 것은 확인했다. IPP·IOP가 전부 다르고(AX 기준
-   [16.132,-16.13,8.095] / [15.584,-15.967,4.85] / [14.64,-16.47,8.28]), 촬영 시간대가
-   겹치지 않으며(10:35~11:01 / 11:28~11:40 / 13:55~14:08), 화소가 동일한 쌍도 없다.
-   폴더 간 GRE AX PRE 상관은 0.81~0.88로 "다른 랫 뇌끼리" 수준이다.
-   폴더 4 안에는 파일명 접미사가 `_01`, `_03`, `_04`로 섞여 있으나 IPP·IOP가 전부
-   폴더 4 자신의 기하와 일치하므로 모두 폴더 4의 영상이다.
-2. **표적이 여러 개인 설계다.** 한 뇌에 최대 4부위를 조사했으므로 좌우 거울상 비대칭만
-   쓰면 안 된다. 양쪽 반구를 동시에 표적했다면 거울상 차감에서 서로 상쇄된다.
-   그래서 좌우 대칭을 가정하지 않는 **국소 대비 검출기**(`local_focus`)를 함께 돌린다.
-3. PRE와 POST의 IPP가 폴더별로 소수점까지 같다. 처방 수준의 이동은 없다.
-4. 폴더 4의 AX만 TR 110 / TE 3.948(다른 폴더는 111 / 3.984), FSE AX TE 7.256(다른
-   폴더는 7.440)이다. 폴더 안에서는 PRE와 POST가 같은 값이라 증강 계산에는 영향이 없고,
-   개체 간 차이도 1% 안쪽이라 무시할 수준이다.
-5. 폴더 1의 **FSE COR POST만 11:01:01로 다른 POST보다 14분 늦게** 찍혔다
-   (FSE AX POST는 10:46:27). 같은 개체의 FSE AX와 COR을 같은 시점으로 보지 말 것.
+1. **파일명과 폴더 번호가 엇갈린다.** 폴더 1의 파일은 전부 `NO2`, 폴더 4는 `NO1`이다.
+   촬영은 폴더 1이 먼저(10:15), 폴더 4가 나중(11:45)이다. 개체는 **폴더 번호로만**
+   구분한다. 두 폴더는 IPP·IOP와 촬영 시간대가 전부 달라 서로 다른 개체다.
+2. PRE와 POST 사이에 **IVIM(SE-EPI, b 11개)**이 끼어 있다. PRE 후 약 34분 공백,
+   IVIM 약 8~12분, 다시 약 10~13분 공백 뒤 GRE POST1이다. IVIM은 이 스크립트가 아니라
+   `_ivim_0922.py`가 처리한다.
+3. **MREPT(8에코 NIfTI)**와 `recon.nii`가 있다. 둘은 **파일 단위로 동일**하다(8에코 전부
+   md5 일치). 위상 영상이 없으므로 EPT는 계산할 수 없다. T2는 `_t2_0922.py`가 처리한다.
+4. PRE와 POST의 IPP가 폴더별로 소수점까지 같다.
 
 실행
 ----
-    python "_run_0915.py"          # 폴더 1, 3, 4 전부
-    python "_run_0915.py" 4        # 폴더 4만
-    python "_run_0915.py" figs     # 저장된 npz로 그림·정량만 다시
+    python "_run_0922.py"          # 폴더 1, 4 전부
+    python "_run_0922.py" 4        # 폴더 4만
+    python "_run_0922.py" figs     # 저장된 npz로 그림·정량만 다시
 """
 import os
 import re
@@ -45,8 +38,8 @@ import matplotlib.pyplot as plt
 
 ROOT = r"C:\Users\user\Desktop\대학원\6. 원자력의학원"
 CODE_DIR = os.path.join(ROOT, "MRI 분석 코드")
-BASE = os.path.join(ROOT, "26-09-15")
-DATA_ROOT = os.path.join(BASE, "260915_BBBO_120G")
+BASE = os.path.join(ROOT, "26-09-22")
+DATA_ROOT = os.path.join(BASE, "260922_BBBO_200G")
 OUT_ROOT = os.path.join(BASE, "2. 분석 결과")
 
 SCALE_TAG = (0x00E1, 0x1001)
@@ -62,10 +55,10 @@ MIRROR_MAX_DEG = 10    # 탐색할 최대 기울기 (도)
 KINDS = ("gre", "fse")
 KIND_LABEL = {"gre": "GRE DCE (gems)", "fse": "FSE T1 (fsems)"}
 
-# 파일명이 전부 NO1이라 폴더 번호가 유일한 개체 식별자다.
+# 파일명(폴더1=NO2, 폴더4=NO1)과 폴더 번호가 엇갈려 폴더 번호를 식별자로 쓴다.
 SETS = {r: dict(data=os.path.join(DATA_ROOT, r),
                 out=os.path.join(OUT_ROOT, f"RAT {r}"),
-                label=f"0915_NO{r}") for r in ("1", "3", "4")}
+                label=f"0922_F{r}") for r in ("1", "4")}
 
 sys.path.insert(0, CODE_DIR)
 from mri_dce import (_load_volumes, Slab, register_slab, enhancement_curve,

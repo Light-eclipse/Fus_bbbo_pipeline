@@ -29,7 +29,7 @@ sampling 인자로 처리한다.
 
 실행
 ----
-    python "_focus_depth.py"          # 폴더 1, 3, 4 전부
+    python "_focus_depth.py"          # 폴더 1, 4 전부
     python "_focus_depth.py" 4        # 폴더 4만
 """
 import os
@@ -50,7 +50,7 @@ _set_korean_font()
 DARK_FRAC = 0.85        # 조직 중앙값 대비 이 배수 미만이면 두개골·경막·배경으로 본다
 MIN_BRAIN_VOX = 5000    # 뇌 성분 최소 화소수
 
-RATS = sys.argv[1:] or ["1", "3", "4"]
+RATS = sys.argv[1:] or ["1", "4"]
 
 
 def brain_mask(pre, tissue):

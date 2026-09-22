@@ -25,7 +25,7 @@
 
 병변 통합은 환자 좌표계에서 중심 간 거리 `CLUSTER_MM` 이내를 같은 병변으로 묶는다.
 
-실행: python "_lesion_summary.py"          # 폴더 1, 3, 4 전부
+실행: python "_lesion_summary.py"          # 폴더 1, 4 전부
       python "_lesion_summary.py" 3        # 폴더 3만
 """
 import os
@@ -38,7 +38,7 @@ from scipy import ndimage
 
 BASE = os.path.dirname(os.path.abspath(__file__))
 ROOT = os.path.dirname(os.path.dirname(BASE))
-DATA_ROOT = os.path.join(os.path.dirname(BASE), "260915_BBBO_120G")
+DATA_ROOT = os.path.join(os.path.dirname(BASE), "260922_BBBO_200G")
 sys.path.insert(0, os.path.join(ROOT, "MRI 분석 코드"))
 from mri_dce import classify_orientation
 
@@ -61,7 +61,7 @@ for _a in sys.argv[1:]:
     if _a.startswith("pp="):
         LOCAL_EXCESS_PP = float(_a.split("=")[1])
 SUFFIX = "" if LOCAL_EXCESS_PP == 15 else f"_pp{int(LOCAL_EXCESS_PP)}"
-RATS = _args or ["1", "3", "4"]
+RATS = _args or ["1", "4"]
 
 
 def disk(rr):

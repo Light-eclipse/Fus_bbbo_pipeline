@@ -8,6 +8,28 @@ the stage level. Files that were edited in place rather than copied per date —
 `mri_dce.py` above all — exist only in their final state and enter at v0.1 as they are
 now.
 
+## v0.6 — IVIM and T2 as independent contrasts
+
+*2026-09-22*
+
+IVIM (Agilent `epip`, SE-EPI): 11 series by b-value, 10-1000 s/mm2, acquired
+descending, with no separate b=0 series. Each slice has four images distinguished
+only by filename — image1 is the b~0 reference and images 2-4 are three diffusion
+directions. Direction vectors are absent from the headers, so the trace (geometric
+mean of the three) is computable but a tensor and FA are not.
+Normalising by the in-series b0 cancels both the scale tag and signal drift.
+Segmented fit: D from b >= 200, f = 1 - S_int, D* by log grid search, 300-sample
+bootstrap CI.
+**Voxelwise f and D* are not usable here** — noise is 3.4-3.6% of S0 against f ~ 0.038,
+and 52% of fitted D* land on the grid edge. ROI level only.
+MREPT NIfTI traps: `recon.nii` can be an md5-identical duplicate (no phase, so no EPT);
+the Agilent qform quaternion is invalid so `nib.load` raises `w2 should be positive`
+(read the header and data directly via `from_fileobj`); sform is zero so geometry has
+to be recovered by correlating with the GRE; no echo times anywhere; odd-even echo
+oscillation from stimulated echoes.
+
+Files: `run_dce.py`, `focus_depth.py`, `lesion_summary.py`, `ivim.py`, `t2_relaxometry.py`, `lesion_figs.py`
+
 ## v0.5 — Symmetry-free local contrast, lesion depth
 
 *2026-09-15*
