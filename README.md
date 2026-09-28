@@ -69,3 +69,12 @@ Korean text in the figures needs a Korean font (`_set_korean_font` picks one up 
 No imaging data is in this repository and none should be added. Raw DICOM, NIfTI,
 intermediate `.npz` volumes and result figures stay local — about 25 GB at the time of
 writing.
+
+
+## Tooling
+
+`tools/build_history.py` holds the version table and rebuilt this history from the
+per-date scripts. Adding a stage means adding one entry to `VERSIONS` and running it;
+it commits only what has no tag yet. See its docstring.
+
+Tags mark pipeline stages. Commits without a tag are tooling or documentation.
