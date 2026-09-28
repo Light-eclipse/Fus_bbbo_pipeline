@@ -24,6 +24,7 @@ out to be, and the number that settled it. Those notes are the point of the repo
 | [`v0.5`](../../releases/tag/v0.5) | 2026-09-15 | Symmetry-free local contrast, lesion depth |
 | [`v0.6`](../../releases/tag/v0.6) | 2026-09-22 | IVIM and T2 as independent contrasts |
 | [`v0.7`](../../releases/tag/v0.7) | 2026-09-22 | Signal-decrease and haemorrhage review |
+| [`v0.8`](../../releases/tag/v0.8) | 2026-09-28 | Display rescaling and coil sensitivity correction |
 
 
 Full detail for each stage is in [CHANGELOG.md](CHANGELOG.md).

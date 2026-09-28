@@ -8,6 +8,33 @@ the stage level. Files that were edited in place rather than copied per date —
 `mri_dce.py` above all — exist only in their final state and enter at v0.1 as they are
 now.
 
+## v0.8 — Display rescaling and coil sensitivity correction
+
+*2026-09-28*
+
+Enhancement was hard to see on screen for two reasons.
+The grey window ran from air (14) to a level that clipped 11-22% of POST brain voxels,
+so the lower third of the ramp showed nothing and the top was blown out.
+**A receive-coil sensitivity gradient dominates the within-brain spread** — brain median
+falls from 379 to 213 across one slice, smoothly, a factor of 1.8. Narrowing the window
+alone just saturates the near-coil side first.
+Fix: fit a smooth multiplicative field to log(PRE) over brain voxels (3rd-order
+polynomial, normalised to 1 at the brain median) and **divide PRE and POST by the same
+field**. Dividing both by the same number leaves (POST-PRE)/PRE untouched; the script
+recomputes and prints the residual every run (order 1e-13 %p). The correction changes
+display only.
+Two brain-mask bugs surfaced and are fixed here. The erosion radius was in pixels, but
+GRE is 0.117 and FSE 0.156 mm/px, so the same number meant different strengths — it is
+now in mm. And the global threshold `PRE >= DARK_FRAC * tissue median` collapses on
+slices far from the coil, where the whole brain falls below it; one series lost slices
+0-3 down to 1680-2429 voxels against 17932 mid-slab. Mask and field are now re-fitted
+alternately, which restores those slices to 4989-11207.
+The window also has a noise floor: never narrower than 8x the PRE noise SD. Percentiles
+alone let the window collapse to the noise width on a low-contrast series (span 371
+against a noise SD of 73.6, so noise +-1 SD covered a quarter of the ramp).
+
+Files: `rescale.py`
+
 ## v0.7 — Signal-decrease and haemorrhage review
 
 *2026-09-22*
