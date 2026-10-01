@@ -1,9 +1,9 @@
 # -*- coding: utf-8 -*-
-"""260922 MREPT(8에코 NIfTI) → T2 맵.
+"""261001 MREPT(8에코 NIfTI) → T2 맵.
 
 데이터
 ------
-* `0922_MREPT-NO?_20260922_01.nii/vol_image001echoNNN.nii` 8개. 128×128×14, float32,
+* `0922_MREPT-NO?_20261001_01.nii/vol_image001echoNNN.nii` 8개. 128×128×14, float32,
   scl_slope 100(26-08-20에서 확인한 "nii = 참값 × 100"과 같은 규칙).
 * `recon.nii`는 **MREPT와 파일 단위로 동일**하다(8에코 전부 md5 일치). 위상이 없으므로
   **EPT는 계산할 수 없다.**
@@ -27,7 +27,7 @@
 짝수 에코(2,4,6,8). 홀·짝은 에코 간격이 2ΔTE가 된다. 세 값의 차이가 이 방법의 불확실성이다.
 자극 에코를 제대로 다루려면 EPG 모형 적합이 필요한데, 플립각 정보가 없어 하지 않았다.
 
-실행: python "_t2_0922.py"
+실행: python "_t2_1001.py"
 """
 import os
 import sys
@@ -43,7 +43,7 @@ import matplotlib.pyplot as plt
 
 BASE = os.path.dirname(os.path.abspath(__file__))
 ROOT = os.path.dirname(os.path.dirname(BASE))
-DATA_ROOT = os.path.join(os.path.dirname(BASE), "260922_BBBO_200G")
+DATA_ROOT = os.path.join(os.path.dirname(BASE), "261001_BBBO")
 sys.path.insert(0, os.path.join(ROOT, "MRI 분석 코드"))
 from mri_dce import _set_korean_font
 _set_korean_font()
@@ -53,7 +53,7 @@ DTE_MS = 7.0            # 가정 (26-08-20 MREPT 첫 TE)
 DARK_FRAC = 0.85
 NOISE_K = 3.0
 SHIFT_MAX = 4
-RATS = sys.argv[1:] or ["1", "4"]
+RATS = sys.argv[1:] or ["1", "2", "3"]
 
 
 def read_nii(f):

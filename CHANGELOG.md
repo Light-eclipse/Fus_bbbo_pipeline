@@ -8,6 +8,65 @@ the stage level. Files that were edited in place rather than copied per date —
 `mri_dce.py` above all — exist only in their final state and enter at v0.1 as they are
 now.
 
+## v0.9 — Contrast delivery check, EPT phase tests, DICOM T2/T2*
+
+*2026-10-01*
+
+**The local detector returns candidates in an animal with no systemic enhancement.**
+Whole-tissue enhancement was -3.3 to +8.9% in one animal against +22.5 to +45.0% in
+the other two. The corrected air background agreed across time points to 0.3-1.5%, so
+the scale tag was right and the tissue did not enhance. Opening cannot be judged
+there, and the images do not say why the contrast is missing. `local_focus` still
+passed 7 candidates in that animal at +13 to +61 %p net leak. Without systemic contrast
+those are registration residual and motion — a measured false-positive case, kept in
+the output. Whole-tissue enhancement stays out of the BBBO judgement (v0.3) but is now
+read first, as the check that contrast was delivered.
+Across the three animals one lesion reproduced in two acquisitions (8.31 mm3, 0.87 mm
+below the surface, +41.2 %p). Both were coronal; the orthogonal orientation did not
+reproduce it.
+`verify.py` runs before any analysis: protocol, scale tag, acquisition time and
+geometry per series. It caught a series named for animal 1 whose IPP equals animal 2's
+GRE to the last decimal, and showed that T2/T2* followed a 54 min gap in one animal but
+came straight after PRE in the other two. If that gap is the sonication, the three
+cannot be pooled.
+EPT. **Test that a phase file is a phase map before computing sigma from it.** The
+08-20 file was not: tissue and air phase noise were equal (1.44 against 1.58 rad). This
+one is. The ratio is 2.06 / 3.82 = 0.54, and the odd-echo and even-echo means — two
+independent measurements — correlate 0.830 raw and 0.9965 after 0.82 mm smoothing
+(magnitude control 0.9980; noise would give 0). Values form a single bell over +-9, so
+it is not wrapping.
+Sigma still does not come out, for two reasons of different kinds.
+Voxel phase noise is 70x theory: magnitude SNR 34.3 implies 0.029 rad, measured 2.06.
+That is reconstruction or export, not physics. Over a 10 mm ROI and 14 slices the
+sigma uncertainty is 1.50 S/m as delivered, 0.53 after 8-echo averaging and 0.021 at
+theoretical noise. ROI values only; a voxel map is out of reach in every case.
+And the smooth field is 41x larger than conductivity can make it: 0.7 S/m gives
+221 mrad across a 20 mm brain, the observed field spans +-9 rad. A per-voxel linear
+fit over echo number splits intercept (TE-independent) from slope (B0). The slope is
+0.102 rad/echo, so B0 largely refocuses and the intercept is the transceive-phase
+candidate, yet its Laplacian gives a median of +1.36 S/m with 49% of tissue negative.
+Echo separation does not remove the coil phase. What remains is outside the
+processing: the export settings, a saline phantom of known sigma, and a pre/post-FUS
+difference in which the coil phase cancels.
+T2 and T2* now come from DICOM (`t2_dicom.py`). `T2_MAP` (mems) and `T2_star_AX`
+(mgems) carry IPP/IOP identical to the GRE, so geometry no longer has to be recovered
+by correlation as in v0.6. Echo 1 correlates 0.984-0.990 with the MREPT NIfTI: the
+same acquisition. Per-echo EchoTime is still the first-echo value on every image, so
+`TE_n = n x dTE` remains an assumption, now with indirect support: T2 was 47.5-49.0 ms
+at TE1 7.0 ms on 08-20 and 48.0-49.9 ms at TE1 10.0 ms here, and a wrong assumption
+would put the two dates 7:10 apart. T2* is 10.3-10.7 ms, but odd- and even-echo fits
+differ by 17-21% and that spread belongs with the number.
+IVIM reads b-values from the filenames. They differed per animal (160 or 150, 120
+missing in one, b=1500 new), which a fixed list cannot follow. One animal's fit failed
+(D 0.133 against 0.795 and 0.797 x1e-3 mm2/s, f 0.263 against 0.044 and 0.061) and is
+excluded; the cause was not identified.
+`focus_depth.py` takes its brain mask from `rescale.py` (v0.8) in place of the global
+threshold. The old mask let temporal muscle in: 2659-2957 mm3 against 1389-2838 mm3.
+Depths from earlier dates were measured against the old mask and are not directly
+comparable.
+
+Files: `run_dce.py`, `verify.py`, `focus_depth.py`, `lesion_summary.py`, `lesion_figs.py`, `rescale.py`, `ivim.py`, `t2_relaxometry.py`, `t2_dicom.py`, `ept/ept_diag.py`, `ept/ept_split.py`, `ept/ept_decomp.py`, `ept/ept_feas.py`
+
 ## v0.8 — Display rescaling and coil sensitivity correction
 
 *2026-09-28*

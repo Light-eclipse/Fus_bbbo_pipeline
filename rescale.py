@@ -316,7 +316,7 @@ def run(rat, full=False):
 if __name__ == "__main__":
     args = [a for a in sys.argv[1:] if not a.startswith("--")]
     full = "--full" in sys.argv
-    for r in (args or ["1", "4"]):
+    for r in (args or ["1", "2", "3"]):
         run(r, full)
 
 
@@ -329,7 +329,7 @@ def frames(rat, kinds=("gre",), oris=("axial", "coronal"), key=None, dpi=140):
     """
     key = key or CHOICE
     d = np.load(os.path.join(BASE, f"RAT {rat}", "corrected_volumes.npz"))
-    date = os.path.basename(os.path.dirname(BASE)).replace("-", "")[2:]   # 26-09-22 -> 0922
+    date = os.path.basename(os.path.dirname(BASE)).replace("-", "")[2:]   # 26-10-01 -> 0922
     for kind in kinds:
         for ori in oris:
             k = f"{kind}_{ori}_PRE"

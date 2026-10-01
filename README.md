@@ -25,6 +25,7 @@ out to be, and the number that settled it. Those notes are the point of the repo
 | [`v0.6`](../../releases/tag/v0.6) | 2026-09-22 | IVIM and T2 as independent contrasts |
 | [`v0.7`](../../releases/tag/v0.7) | 2026-09-22 | Signal-decrease and haemorrhage review |
 | [`v0.8`](../../releases/tag/v0.8) | 2026-09-28 | Display rescaling and coil sensitivity correction |
+| [`v0.9`](../../releases/tag/v0.9) | 2026-10-01 | Contrast delivery check, EPT phase tests, DICOM T2/T2* |
 
 
 Full detail for each stage is in [CHANGELOG.md](CHANGELOG.md).
@@ -40,9 +41,12 @@ Full detail for each stage is in [CHANGELOG.md](CHANGELOG.md).
 | `lesion_summary.py` | Clusters candidates in patient coordinates, counts reproducing acquisitions |
 | `top4.py` | Ranks candidates for a four-target design |
 | `ivim.py` | IVIM: segmented D / f / D* fit from a b-value series |
-| `t2_relaxometry.py` | T2 from MREPT multi-echo data |
+| `t2_relaxometry.py` | T2 from MREPT multi-echo NIfTI (kept for comparison with `t2_dicom.py`) |
 | `lesion_figs.py` | Per-lesion figure across sequences and orientations |
 | `rescale.py` | Display window, coil sensitivity correction, improved brain mask |
+| `verify.py` | Pre-analysis check: protocol, scale tag, acquisition time and geometry per series |
+| `t2_dicom.py` | T2 / T2* fitted directly from DICOM multi-echo series |
+| `ept/` | Phase-file validity tests for EPT: noise ratio, split-half, echo decomposition, sigma uncertainty |
 | `negchange/` | Signal-decrease review: through-plane shift, focal dark spots across contrasts |
 
 ## Requirements

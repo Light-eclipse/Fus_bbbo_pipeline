@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-"""260922 IVIM(SE-EPI, b 11개) 분석 — 확산계수 D, 관류분율 f, 의사확산계수 D*.
+"""261001 IVIM(SE-EPI, b 11개) 분석 — 확산계수 D, 관류분율 f, 의사확산계수 D*.
 
 데이터 구조 (헤더와 신호로 확인)
 -------------------------------
@@ -58,7 +58,7 @@ IVIM 자체로 문턱을 잡으면 머리 전체(5,555 mm³)가 잡혀 D에 뇌�
   공백(PRE 후 약 34분)에 들어갔는지는 헤더로 확인되지 않는다.
 * 64×64라 병변 하나가 화소 몇~십몇 개다. 부분체적이 크다.
 
-실행: python "_ivim_0922.py"        # 폴더 1, 4 전부 (DCE 결과 npz 필요)
+실행: python "_ivim_1001.py"        # 폴더 1, 4 전부 (DCE 결과 npz 필요)
 """
 import os
 import re
@@ -74,15 +74,23 @@ import matplotlib.pyplot as plt
 
 BASE = os.path.dirname(os.path.abspath(__file__))
 ROOT = os.path.dirname(os.path.dirname(BASE))
-DATA_ROOT = os.path.join(os.path.dirname(BASE), "260922_BBBO_200G")
+DATA_ROOT = os.path.join(os.path.dirname(BASE), "261001_BBBO")
 sys.path.insert(0, os.path.join(ROOT, "MRI 분석 코드"))
 from mri_dce import _set_korean_font
 _set_korean_font()
 plt.rcParams["axes.unicode_minus"] = False       # 맑은 고딕에 U+2212 없음
 
 SCALE_TAG = (0x00E1, 0x1001)
-BVALS = [10, 20, 40, 80, 120, 200, 250, 400, 600, 800, 1000]
-B_SPLIT = 200
+# b값이 폴더마다 다르다 (폴더1 160 / 폴더2·3 150, 폴더3은 120 없음, 전부 1500 포함).
+# 그래서 고정 목록 대신 폴더 안의 파일명에서 읽는다.
+def bvals_of(rat):
+    bs = sorted(int(re.search(r"_B(\d+)[_.]", os.path.basename(d)).group(1))
+                for d in glob.glob(os.path.join(DATA_ROOT, rat, "*IVIM*_B*")))
+    return bs
+
+
+BVALS = []          # run_one 안에서 폴더별로 채운다
+B_SPLIT = 200     # 이 이상에서 D 적합 (관류 성분이 이미 감쇠한 구간)
 DSTAR_GRID = np.geomspace(2e-3, 200e-3, 120)
 NOISE_K = 3.0
 DARK_FRAC = 0.85
@@ -90,8 +98,8 @@ SHIFT_MAX = 4
 ROI_R_MM = 1.0
 SHELL_MM = (1.0, 2.0)
 N_BOOT = 300
-RNG = np.random.default_rng(20260922)
-RATS = sys.argv[1:] or ["1", "4"]
+RNG = np.random.default_rng(20261001)
+RATS = sys.argv[1:] or ["1", "2", "3"]
 
 
 # ------------------------------------------------------------ 기하
@@ -242,6 +250,9 @@ def main():
         os.makedirs(out, exist_ok=True)
         print("=" * 80)
         print(f"폴더 {rat}")
+        global BVALS
+        BVALS = bvals_of(rat)
+        print(f"  b값 {len(BVALS)}개: {BVALS}", flush=True)
         ser = {b: load_series(rat, b) for b in BVALS}
         gi = ser[10]["g"]
         S0 = np.stack([ser[b]["vol"][0] for b in BVALS]).mean(0)

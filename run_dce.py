@@ -1,27 +1,34 @@
 # -*- coding: utf-8 -*-
-"""260922 BBBO 200G — 시리즈별 강도 스케일 보정 분석 (폴더 1, 4). GRE·FSE 부분.
+"""261001 BBBO — 시리즈별 강도 스케일 보정 분석 (폴더 1, 2, 3). GRE·FSE 부분.
 
-절차는 26-09-15판(`_run_0915.py`)과 같다. `참값 = 화소값 / 태그(00E1,1001)`로 되돌린 뒤
-GRE(gems)와 FSE(fsems)를 각각 독립 시계열로 처리한다. 좌우 대칭을 가정하지 않는
-국소 대비 검출(`local_focus`)도 그대로 돈다.
+절차는 26-09-22판(`_run_0922.py`)과 같다. `참값 = 화소값 / 태그(00E1,1001)`로 되돌린 뒤
+GRE(gems)와 FSE(fsems)를 각각 독립 시계열로 처리한다. 좌우 거울상 비대칭과 국소 대비
+검출을 함께 돌린다.
 
 이 날짜의 특징
 --------------
-1. **파일명과 폴더 번호가 엇갈린다.** 폴더 1의 파일은 전부 `NO2`, 폴더 4는 `NO1`이다.
-   촬영은 폴더 1이 먼저(10:15), 폴더 4가 나중(11:45)이다. 개체는 **폴더 번호로만**
-   구분한다. 두 폴더는 IPP·IOP와 촬영 시간대가 전부 달라 서로 다른 개체다.
-2. PRE와 POST 사이에 **IVIM(SE-EPI, b 11개)**이 끼어 있다. PRE 후 약 34분 공백,
-   IVIM 약 8~12분, 다시 약 10~13분 공백 뒤 GRE POST1이다. IVIM은 이 스크립트가 아니라
-   `_ivim_0922.py`가 처리한다.
-3. **MREPT(8에코 NIfTI)**와 `recon.nii`가 있다. 둘은 **파일 단위로 동일**하다(8에코 전부
-   md5 일치). 위상 영상이 없으므로 EPT는 계산할 수 없다. T2는 `_t2_0922.py`가 처리한다.
-4. PRE와 POST의 IPP가 폴더별로 소수점까지 같다.
+1. **개체 3마리다**(폴더 1, 2, 3). 파일명 접미사 `NO1~NO3`가 폴더 번호와 일치한다.
+   예외는 폴더 2의 `T2_star_AX-NO1_..._02.dcm` 하나인데, IPP가
+   [17.085 -20.310 5.254]로 **폴더 2의 GRE AX PRE와 소수점까지 같다.** 폴더 2 자신의
+   영상이고 파일명만 개체 1의 처방을 물려받았다. 9/15·9/22에도 같은 일이 있었다.
+2. PRE/POST 기하와 프로토콜이 세 폴더 모두 완전히 일치한다(IPP·IOP·TR·TE·행렬).
+   증강 계산의 전제는 충족된다.
+3. GRE는 축상 TR 107 / 관상 TR 76으로 방향마다 다르다. 방향을 섞지 않는다.
+4. PRE 후 약 35분 공백, **IVIM(SE-EPI, b 15~16개)**이 끼고, 다시 약 9분 뒤 GRE POST1이다.
+   IVIM은 `_ivim_1001.py`가 처리한다. b값이 폴더마다 달라(폴더1 160, 폴더2·3 150,
+   폴더3은 120 없음) 폴더별로 목록을 읽는다. **b=1500이 이번에 처음 들어왔다.**
+5. **MREPT(8에코 NIfTI)**가 세 폴더 모두 있고, 폴더 1에만 `reconphs.nii`가 따로 있다.
+   폴더 2·3의 `recon.nii`는 MREPT와 md5까지 같은 복사본이라 위상이 없다.
+   EPT는 `_ept_*.py`가 폴더 1만 다룬다.
+6. **`T2_MAP`(mems 10에코)와 `T2_star_AX`(mgems 10에코)가 DICOM으로 들어왔다.**
+   다만 에코별 EchoTime이 전부 첫 에코 값(10.0 / 3.0)으로만 찍혀 있어 ΔTE 가정은
+   여전히 필요하다. `_t2_1001.py`가 처리한다.
 
 실행
 ----
-    python "_run_0922.py"          # 폴더 1, 4 전부
-    python "_run_0922.py" 4        # 폴더 4만
-    python "_run_0922.py" figs     # 저장된 npz로 그림·정량만 다시
+    python "_run_1001.py"          # 폴더 1, 2, 3 전부
+    python "_run_1001.py" 2        # 폴더 2만
+    python "_run_1001.py" figs     # 저장된 npz로 그림·정량만 다시
 """
 import os
 import re
@@ -38,8 +45,8 @@ import matplotlib.pyplot as plt
 
 ROOT = r"C:\Users\user\Desktop\대학원\6. 원자력의학원"
 CODE_DIR = os.path.join(ROOT, "MRI 분석 코드")
-BASE = os.path.join(ROOT, "26-09-22")
-DATA_ROOT = os.path.join(BASE, "260922_BBBO_200G")
+BASE = os.path.join(ROOT, "26-10-01")
+DATA_ROOT = os.path.join(BASE, "261001_BBBO")
 OUT_ROOT = os.path.join(BASE, "2. 분석 결과")
 
 SCALE_TAG = (0x00E1, 0x1001)
@@ -58,7 +65,7 @@ KIND_LABEL = {"gre": "GRE DCE (gems)", "fse": "FSE T1 (fsems)"}
 # 파일명(폴더1=NO2, 폴더4=NO1)과 폴더 번호가 엇갈려 폴더 번호를 식별자로 쓴다.
 SETS = {r: dict(data=os.path.join(DATA_ROOT, r),
                 out=os.path.join(OUT_ROOT, f"RAT {r}"),
-                label=f"0922_F{r}") for r in ("1", "4")}
+                label=f"1001_F{r}") for r in ("1", "2", "3")}
 
 sys.path.insert(0, CODE_DIR)
 from mri_dce import (_load_volumes, Slab, register_slab, enhancement_curve,

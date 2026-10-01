@@ -50,27 +50,23 @@ _set_korean_font()
 DARK_FRAC = 0.85        # 조직 중앙값 대비 이 배수 미만이면 두개골·경막·배경으로 본다
 MIN_BRAIN_VOX = 5000    # 뇌 성분 최소 화소수
 
-RATS = sys.argv[1:] or ["1", "4"]
+RATS = sys.argv[1:] or ["1", "2", "3"]
 
 
-def brain_mask(pre, tissue):
-    """조직 마스크에서 두개골 암선을 빼고 가장 큰 연결성분을 뇌로 잡는다."""
-    med = float(np.median(pre[tissue]))
-    bright = tissue & (pre >= DARK_FRAC * med)
-    bright = ndimage.binary_opening(bright, np.ones((1, 3, 3)))
-    lab, n = ndimage.label(bright)
-    if n == 0:
-        return None
-    sizes = ndimage.sum(bright, lab, range(1, n + 1))
-    k = int(np.argmax(sizes)) + 1
-    if sizes[k - 1] < MIN_BRAIN_VOX:
-        return None
-    br = lab == k
-    # DARK_FRAC 0.55에서는 두개골 암선이 얇아 두피·측두근까지 한 덩어리로 붙었고
-    # (폴더 3 gre axial 2694mm3), 깊이가 두피 표면 기준으로 과대평가됐다.
-    # 0.85로 올리면 암선이 충분히 두꺼워져 뇌만 남는다(1919mm3, 랫 뇌 범위).
-    # 슬라이스별로 작은 구멍 메우기
-    br = np.stack([ndimage.binary_fill_holes(br[z]) for z in range(br.shape[0])])
+# v0.8(`_rescale.py`)에서 고친 마스크를 그대로 쓴다. 기존 마스크의 문제 두 가지:
+#   1. 침식 반경이 화소 단위였다. GRE 0.137 / FSE 0.182 mm/화소라 계열마다 세기가
+#      달랐다. mm 로 준다.
+#   2. 문턱 `PRE >= DARK_FRAC * 조직중앙값` 이 전역이라 코일 감도 기울기가 있으면
+#      코일에서 먼 슬라이스의 뇌 전체가 문턱 아래로 떨어진다. 마스크와 감도장을
+#      번갈아 다시 구해 푼다.
+import importlib.util as _ilu
+_spec = _ilu.spec_from_file_location("_rescale", os.path.join(BASE, "_rescale.py"))
+_rs = _ilu.module_from_spec(_spec)
+_spec.loader.exec_module(_rs)
+
+
+def brain_mask(pre, tissue, px_mm):
+    br, _ = _rs.brain_and_field(pre, tissue, px_mm)
     return br
 
 
@@ -96,7 +92,7 @@ for rat in RATS:
             pre = d[k].astype(float)
             tis = d[f"{kind}_{ori}_analysis_mask"]
             sp = d[f"{kind}_{ori}_spacing"]      # (sx, sy, sz)
-            br = brain_mask(pre, tis)
+            br = brain_mask(pre, tis, abs(float(sp[0])))
             if br is None:
                 print(f"  [경고] {kind} {ori}: 뇌 마스크 실패")
                 continue

@@ -24,7 +24,7 @@ from matplotlib.patches import Circle
 
 BASE = os.path.dirname(os.path.abspath(__file__))
 ROOT = os.path.dirname(os.path.dirname(BASE))
-DATA_ROOT = os.path.join(os.path.dirname(BASE), "260922_BBBO_200G")
+DATA_ROOT = os.path.join(os.path.dirname(BASE), "261001_BBBO")
 sys.path.insert(0, os.path.join(ROOT, "MRI 분석 코드"))
 from mri_dce import _set_korean_font
 _set_korean_font()
